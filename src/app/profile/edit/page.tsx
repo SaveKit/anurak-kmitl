@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { EditProfileForm } from './form' // เราจะแยก Component ฟอร์มออกมา
+import { EditProfileForm } from './form'
 
 export default async function EditProfilePage() {
   const supabase = await createClient()
