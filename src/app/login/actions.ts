@@ -4,33 +4,42 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 
-export async function login(formData: FormData) {
+// กำหนด Type ของการตอบกลับ
+type AuthState = {
+  message?: string
+  success?: boolean
+} | null
+
+export async function login(prevState: AuthState, formData: FormData): Promise<AuthState> {
   const supabase = await createClient()
 
-  // ดึงข้อมูลจากฟอร์ม
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // ส่งข้อมูลไป Supabase Auth
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
-    return redirect('/login?message=Could not authenticate user')
+    console.error('Login Error:', error.message)
+    // ⚠️ คืนค่า Error กลับไปหน้าเว็บแทนการ Redirect
+    return { 
+      message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่ หรือสมัครสมาชิกหากยังไม่มีบัญชี',
+      success: false 
+    }
   }
 
   revalidatePath('/', 'layout')
-  redirect('/') // ล็อกอินผ่าน ให้ไปหน้าแรก
+  redirect('/')
 }
 
-export async function signup(formData: FormData) {
+export async function signup(prevState: AuthState, formData: FormData): Promise<AuthState> {
   const supabase = await createClient()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  const fullName = formData.get('fullName') as string // รับชื่อ-นามสกุลด้วย
+  const fullName = formData.get('fullName') as string
 
   const { error } = await supabase.auth.signUp({
     email,
@@ -44,7 +53,11 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    return redirect('/login?message=Could not authenticate user')
+    console.error('Signup Error:', error.message)
+    return { 
+      message: 'ไม่สามารถสมัครสมาชิกได้ (อีเมลนี้อาจถูกใช้งานแล้ว)',
+      success: false 
+    }
   }
 
   revalidatePath('/', 'layout')
