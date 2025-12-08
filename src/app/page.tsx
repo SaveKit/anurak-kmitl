@@ -1,28 +1,34 @@
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
-import { signout } from './login/actions'
+import { createClient } from "@/utils/supabase/server";
+import { redirect } from "next/navigation";
+import { signout } from "./login/actions";
+import { enforceProfileCompletion } from "@/utils/profile-check";
 
 export default async function Home() {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  // 1. เช็ค User จาก Auth
-  const { data: { user } } = await supabase.auth.getUser()
+  // เช็ค User จาก Auth
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) {
-    redirect('/login')
+    redirect("/login");
   }
 
-  // 2. ดึงข้อมูล Profile ของ User นี้
+  // ดึงข้อมูล Profile ของ User นี้
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  // เช็คความครบถ้วนของ Profile
+  enforceProfileCompletion(profile);
 
   // คำนวณชั้นปี (ตัวอย่าง logic)
-  const currentYear = new Date().getFullYear() + 543
-  const yearLevel = profile?.admission_year 
-    ? `ปี ${currentYear - profile.admission_year + 1}` 
-    : 'ยังไม่ระบุชั้นปี'
+  const currentYear = new Date().getFullYear() + 543;
+  const yearLevel = profile?.admission_year
+    ? `ปี ${currentYear - profile.admission_year + 1}`
+    : "ยังไม่ระบุชั้นปี";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -30,7 +36,9 @@ export default async function Home() {
       <nav className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between items-center">
-            <div className="text-xl font-bold text-indigo-600">ANURAK KMITL</div>
+            <div className="text-xl font-bold text-indigo-600">
+              ANURAK KMITL
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-700 hidden sm:block">
                 สวัสดี, {profile?.full_name}
@@ -47,7 +55,6 @@ export default async function Home() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        
         {/* Profile Card */}
         <div className="overflow-hidden rounded-lg bg-white shadow">
           <div className="px-4 py-5 sm:p-6">
@@ -68,15 +75,18 @@ export default async function Home() {
                   <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
                     XP: {profile?.xp_total}
                   </span>
-                  <span>{profile?.faculty || 'ยังไม่ระบุคณะ'}</span>
+                  <span>{profile?.faculty || "ยังไม่ระบุคณะ"}</span>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="bg-gray-50 px-4 py-4 sm:px-6">
             <div className="text-sm">
-              <a href="/profile/edit" className="font-medium text-indigo-600 hover:text-indigo-500">
+              <a
+                href="/profile/edit"
+                className="font-medium text-indigo-600 hover:text-indigo-500"
+              >
                 แก้ไขข้อมูลส่วนตัว <span aria-hidden="true">&rarr;</span>
               </a>
             </div>
@@ -87,18 +97,23 @@ export default async function Home() {
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {/* Card 1: Upcoming Events */}
           <div className="rounded-lg bg-white p-6 shadow">
-            <h3 className="text-lg font-medium text-gray-900">กิจกรรมเร็วๆ นี้</h3>
-            <p className="mt-2 text-sm text-gray-500">ยังไม่มีกิจกรรมเปิดรับสมัคร</p>
+            <h3 className="text-lg font-medium text-gray-900">
+              กิจกรรมเร็วๆ นี้
+            </h3>
+            <p className="mt-2 text-sm text-gray-500">
+              ยังไม่มีกิจกรรมเปิดรับสมัคร
+            </p>
           </div>
 
-           {/* Card 2: My Tickets */}
-           <div className="rounded-lg bg-white p-6 shadow">
+          {/* Card 2: My Tickets */}
+          <div className="rounded-lg bg-white p-6 shadow">
             <h3 className="text-lg font-medium text-gray-900">ตั๋วของฉัน</h3>
-            <p className="mt-2 text-sm text-gray-500">คุณยังไม่ได้ลงทะเบียนกิจกรรมใดๆ</p>
+            <p className="mt-2 text-sm text-gray-500">
+              คุณยังไม่ได้ลงทะเบียนกิจกรรมใดๆ
+            </p>
           </div>
         </div>
-
       </main>
     </div>
-  )
+  );
 }
