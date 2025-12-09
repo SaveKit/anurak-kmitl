@@ -50,6 +50,23 @@ async function uploadAvatar(file: File, userId: string) {
   return data.publicUrl;
 }
 
+async function deleteOldAvatar(oldAvatarUrl: string) {
+  const supabase = await createClient();
+
+  // เช็คก่อนว่าเป็นรูปใน Supabase ของเราจริงไหม (ต้องมีคำว่า avatars ใน URL)
+  // และต้องไม่ใช่รูปจาก Google หรือ UI Avatars
+  if (!oldAvatarUrl.includes("/storage/v1/object/public/avatars/")) {
+    return;
+  }
+
+  // แกะชื่อไฟล์ออกจาก URL
+  const fileName = oldAvatarUrl.split("/").pop();
+
+  if (fileName) {
+    await supabase.storage.from("avatars").remove([fileName]);
+  }
+}
+
 export async function updateProfile(
   prevState: ProfileState,
   formData: FormData
@@ -62,6 +79,13 @@ export async function updateProfile(
   } = await supabase.auth.getUser();
   if (!user) return { message: "Unauthorized" };
 
+  // ดึงข้อมูล Profile เก่า (เพื่อเช็คเรื่องรูปภาพ)
+  const { data: currentProfile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single<Profile>();
+
   // จัดการอัปโหลดรูปภาพ (ถ้ามี)
   const avatarFile = formData.get("avatar") as File | null;
   let newAvatarUrl: string | null = null;
@@ -73,7 +97,13 @@ export async function updateProfile(
     }
 
     try {
+      // อัปโหลดรูปใหม่
       newAvatarUrl = await uploadAvatar(avatarFile, user.id);
+
+      // อัปโหลดสำเร็จ ค่อยลบรูปเก่า (ไม่ใช่รูปจาก Google หรือ UI Avatars)
+      if (currentProfile?.avatar_url) {
+        await deleteOldAvatar(currentProfile.avatar_url);
+      }
     } catch (error) {
       console.error(error);
       return { message: "เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ" };
@@ -112,20 +142,14 @@ export async function updateProfile(
     updateData.avatar_url = newAvatarUrl;
   } else {
     // Case B: ถ้าไม่ได้อัปโหลดรูปใหม่ เช็คดูว่ารูปเก่าเป็น ui-avatars ไหม?
-    const { data: existingProfile } = await supabase
-      .from("profiles")
-      .select("avatar_url")
-      .eq("id", user.id)
-      .single<Pick<Profile, "avatar_url">>();
     if (
-      existingProfile?.avatar_url &&
-      existingProfile.avatar_url.startsWith("https://ui-avatars.com/api/")
+      currentProfile?.avatar_url &&
+      currentProfile.avatar_url.startsWith("https://ui-avatars.com/api/")
     ) {
       // สร้าง URL ใหม่จากชื่อใหม่ (Full Name ที่เพิ่ง Validate ผ่าน)
       const encodedNewName = encodeURIComponent(validatedFields.data.full_name);
       updateData.avatar_url = `https://ui-avatars.com/api/?name=${encodedNewName}&background=random`;
     }
-    // Case C: ถ้าเป็นรูปจาก Google หรือ Supabase Storage (อัปเอง) ก็ปล่อยไว้เหมือนเดิม ไม่ต้องทำอะไร
   }
 
   // บันทึกลง Database
