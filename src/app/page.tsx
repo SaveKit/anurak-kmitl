@@ -2,6 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { signout } from "./login/actions";
 import { enforceProfileCompletion } from "@/utils/profile-check";
+import Image from "next/image";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -59,11 +60,16 @@ export default async function Home() {
         <div className="overflow-hidden rounded-lg bg-white shadow">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center gap-6">
-              <img
-                className="h-24 w-24 rounded-full bg-gray-200 object-cover ring-4 ring-indigo-50"
-                src={profile?.avatar_url || "https://via.placeholder.com/150"}
-                alt="Profile"
-              />
+              <div className="relative h-24 w-24 shrink-0">
+                <Image
+                  src={profile?.avatar_url}
+                  alt="Profile"
+                  fill
+                  className="rounded-full object-cover ring-4 ring-nature-50"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  unoptimized
+                />
+              </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {profile?.full_name}
