@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import { type Profile } from "@/types";
 
 // กำหนดว่า field ไหนบ้างที่ "จำเป็นต้องมี"
-export function checkProfileCompleteness(profile: any) {
+export function checkProfileCompleteness(profile: Profile | null) {
   if (!profile) return false;
 
   // รายการข้อมูลที่ห้ามเป็นค่าว่าง
@@ -24,7 +25,7 @@ export function checkProfileCompleteness(profile: any) {
   return isComplete;
 }
 
-export function enforceProfileCompletion(profile: any) {
+export function enforceProfileCompletion(profile: Profile | null) {
   if (!checkProfileCompleteness(profile)) {
     // ถ้าไม่ครบ ให้ดีดไปหน้า Edit พร้อมแนบ query param ไปบอกด้วย
     redirect("/profile/edit?first_time=true");

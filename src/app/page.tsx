@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signout } from "./login/actions";
 import { enforceProfileCompletion } from "@/utils/profile-check";
 import Image from "next/image";
+import { type Profile } from "@/types";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -20,7 +21,7 @@ export default async function Home() {
     .from("profiles")
     .select("*")
     .eq("id", user.id)
-    .single();
+    .single<Profile>();
 
   // เช็คความครบถ้วนของ Profile
   enforceProfileCompletion(profile);
@@ -62,7 +63,10 @@ export default async function Home() {
             <div className="flex items-center gap-6">
               <div className="relative h-24 w-24 shrink-0">
                 <Image
-                  src={profile?.avatar_url}
+                  src={
+                    profile?.avatar_url ||
+                    "https://ui-avatars.com/api/?name=User"
+                  }
                   alt="Profile"
                   fill
                   className="rounded-full object-cover ring-4 ring-nature-50"

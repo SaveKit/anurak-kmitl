@@ -4,19 +4,9 @@ import { useActionState } from "react";
 import { updateProfile } from "./actions";
 import { TITLES, FACULTIES } from "@/constants/options";
 import Link from "next/link";
+import { type Profile } from "@/types";
 
-type ProfileData = {
-  title: string | null;
-  full_name: string | null;
-  nickname: string | null;
-  student_id: string | null;
-  phone_number: string | null;
-  faculty: string | null;
-  major: string | null;
-  admission_year: number | null;
-};
-
-export function EditProfileForm({ profile }: { profile: ProfileData }) {
+export function EditProfileForm({ profile }: { profile: Profile }) {
   const [state, action, isPending] = useActionState(updateProfile, null);
 
   return (
